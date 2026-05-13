@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Webhook MTV</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 15px;
+      background: #e5ddd5;
+    }
+
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .header-bar h1 {
+      margin: 0;
+      flex: 1;
+      text-align: center;
+    }
+
+    .hektor-logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+
+    .hektor-logo img {
+      width: 150px;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    h1 {
+      color: #075e54;
+      text-align: center;
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+    }
+
+    .input-container {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 20px;
+      padding: 8px 15px;
+      border: 1px solid #ddd;
+    }
+
+    .input-container:focus-within {
+      border-color: #25d366;
+    }
+
+    #pregunta {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      padding: 8px;
+      background: transparent;
+      resize: none;
+      height: 40px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    #btnMicro {
+      background: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px 10px;
+      color: #888;
+    }
+
+    #btnMicro:hover {
+      color: #25d366;
+    }
+
+    #btnMicro.grabando {
+      color: #dc3545;
+      animation: pulse 1s infinite;
+    }
+
+    #btnSettings {
+      background: transparent;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      color: #888;
+      padding: 5px;
+      transition: transform 0.2s;
+    }
+
+    #btnSettings:hover {
+      color: #075e54;
+      transform: rotate(30deg);
+    }
+
+    button.enviar {
+      background: #25d366;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+      width: 100%;
+    }
+
+    button.enviar:hover {
+      background: #20b857;
+    }
+
+    button.enviar:disabled {
+      background: #ccc;
+    }
+
+    .loading {
+      color: #666;
+      font-style: italic;
+      text-align: center;
+      display: none;
+    }
+
+    #respuesta {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    #audioPlayer {
+      width: 100%;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .audio-info {
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+      margin-top: 5px;
+    }
+
+    .listening-indicator {
+      font-size: 11px;
+      color: #dc3545;
+      text-align: center;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .listening-indicator.visible {
+      display: block;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      color: #075e54;
+      font-size: 18px;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 26px;
+      cursor: pointer;
+      color: #888;
+      padding: 0 5px;
+      line-height: 1;
+    }
+
+    .close-btn:hover {
+      color: #333;
+    }
+
+    .setting-group {
+      margin-bottom: 18px;
+    }
+
+    .setting-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      color: #333;
+      font-size: 14px;
+    }
+
+    .setting-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      font-size: 14px;
+      background: #fafafa;
+      cursor: pointer;
+    }
+
+    .setting-group select:focus {
+      outline: none;
+      border-color: #25d366;
+    }
+
+    .modal-footer {
+      margin-top: 16px;
+      text-align: right;
+    }
+
+    .modal-footer button {
+      background: #075e54;
+      color: white;
+      border: none;
+      padding: 8px 24px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .modal-footer button:hover {
+      background: #054d44;
+    }
+
+    .device-hint {
+      font-size: 11px;
+      color: #999;
+      margin-top: 4px;
+    }
+
+    @keyframes pulse {
+      0% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+      100% {
+        opacity: 1;
+      }
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .status-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+      animation: blink 1s infinite;
+    }
+
+    .status-dot.recording {
+      background: #dc3545;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="hektor-logo">
+    <img src="Content/Hektor 3D V3.jpg" alt="Hektor">
+  </div>
+  <div class="header-bar">
+    <h1>🤖 Hektor Asistente MTV</h1>
+  </div>
+
+  <div class="card" style="position:relative;">
+    <button id="btnSettings" onclick="toggleSettings()" title="Configuración de dispositivos" style="position:absolute;top:10px;right:10px;">⚙️</button>
+    <div class="input-container">
+      <textarea id="pregunta" placeholder="Escribe o dicta un mensaje..." rows="1"></textarea>
+      <button id="btnMicro" onclick="toggleGrabacion()" title="Hablar / Dictar">🎤</button>
+    </div>
+    <div class="audio-info" id="audioInfo"></div>
+    <div class="listening-indicator" id="listeningIndicator">
+      <span class="status-dot recording"></span> Escuchando...
+    </div>
+    <button class="enviar" onclick="enviarMensaje()" id="btnEnviar">Enviar</button>
+    <div class="loading" id="loading">Procesando...</div>
+  </div>
+
+  <div class="card" id="cardRespuesta" style="display:none;">
+    <div id="respuesta"></div>
+    <div id="audioContainer">
+      <div id="audioLabel">🔊 Audio de respuesta:</div>
+      <audio id="audioPlayer" controls style="width: 100%;"></audio>
+      <div id="audioStatus" class="audio-info"></div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal-overlay" style="display:none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>⚙️ Configuración de Audio</h3>
+        <button class="close-btn" onclick="closeSettings()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="setting-group">
+          <label for="micSelect">Micrófono:</label>
+          <select id="micSelect" onchange="onMicChanged()"></select>
+          <div class="device-hint">Al seleccionar un micrófono se usará reconocimiento por servidor (Whisper) para mejor precisión.</div>
+        </div>
+        <div class="setting-group">
+          <label for="speakerSelect">Altavoz:</label>
+          <select id="speakerSelect" onchange="onSpeakerChanged()"></select>
+          <div class="device-hint">Se usa para reproducir la respuesta de audio.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeSettings()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Estado global ---
+    let audioBase64 = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let grabando = false;
+    let recognition = null;
+    let restartTimeout = null;
+    let useSpeechAPI = true;
+    let selectedMicId = '';
+    let selectedSpeakerId = '';
+
+    const preguntaInput = document.getElementById('pregunta');
+    const btnMicro = document.getElementById('btnMicro');
+    const audioInfo = document.getElementById('audioInfo');
+    const listeningIndicator = document.getElementById('listeningIndicator');
+
+    // --- Auto-resize textarea ---
+    preguntaInput.addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+
+    // --- Enviar con Enter ---
+    preguntaInput.addEventListener('keypress', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        enviarMensaje();
+      }
+    });
+
+    // ============================================
+    //  WEB SPEECH API - RECONOCIMIENTO DE VOZ
+    // ============================================
+
+    function toggleGrabacion() {
+      if (!grabando) {
+        iniciarGrabacion();
+      } else {
+        detenerGrabacion();
+      }
+    }
+
+    function iniciarGrabacion() {
+      // Si hay un micrófono específico seleccionado, usar MediaRecorder + Whisper (servidor)
+      // que respeta correctamente deviceId y tiene mejor precisión
+      if (selectedMicId) {
+        console.log('Usando MediaRecorder con micrófono seleccionado:', selectedMicId);
+        useSpeechAPI = false;
+        audioInfo.textContent = '🎤 Usando micrófono seleccionado...';
+        iniciarGrabacionFallback();
+        return;
+      }
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        console.log('Usando Web Speech API');
+        useSpeechAPI = true;
+        iniciarSpeechRecognition();
+      } else {
+        console.log('Web Speech API no disponible, usando fallback MediaRecorder');
+        useSpeechAPI = false;
+        audioInfo.textContent = 'ℹ️ Usando grabación de audio (voz no soportada)';
+        iniciarGrabacionFallback();
+      }
+    }
+
+    // --- SPEECH RECOGNITION (Web Speech API) ---
+    function iniciarSpeechRecognition() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        audioInfo.textContent = '❌ Este navegador no soporta reconocimiento de voz';
+        return;
+      }
+
+      if (recognition) {
+        try { recognition.abort(); } catch (e) {}
+        recognition = null;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'es-PE';
+      recognition.maxAlternatives = 1;
+      // Usar micrófono seleccionado si el navegador lo soporta (Chrome 102+)
+      if (selectedMicId && recognition.audioDeviceId !== undefined) {
+        recognition.audioDeviceId = selectedMicId;
+      }
+
+      preguntaInput.value = '';
+      preguntaInput.style.height = '40px';
+      audioInfo.textContent = '🎤 Escuchando...';
+
+      let finalTranscript = '';
+      let noSpeechCount = 0;
+
+      recognition.onresult = (event) => {
+        console.log('onresult disparado, resultados:', event.results.length, 'resultIndex:', event.resultIndex);
+        // Resetear contador porque sí se detectó audio
+        noSpeechCount = 0;
+        if (audioInfo.textContent !== '🎤 Escuchando...') {
+          audioInfo.textContent = '🎤 Escuchando...';
+        }
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const transcript = result[0].transcript;
+          console.log(`  resultado[${i}]: isFinal=${result.isFinal} transcript="${transcript}"`);
+          if (result.isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        preguntaInput.value = (finalTranscript + interimTranscript).trim();
+        preguntaInput.style.height = 'auto';
+        preguntaInput.style.height = Math.min(preguntaInput.scrollHeight, 100) + 'px';
+      };
+
+      recognition.onerror = (event) => {
+        console.error('SpeechRecognition error:', event.error, 'message:', event.message);
+        if (event.error === 'no-speech') {
+          noSpeechCount++;
+          if (noSpeechCount >= 3) {
+            audioInfo.textContent = '⚠️ El micrófono no capta audio. Use el botón ⚙️ para seleccionar un micrófono o escriba su consulta.';
+            detenerGrabacion();
+            return;
+          }
+          audioInfo.textContent = '🎤 No se detectó voz. ¿Micrófono funcionando?';
+          return;
+        }
+        if (event.error === 'aborted') return;
+        audioInfo.textContent = '❌ Error de voz: ' + event.error;
+        detenerGrabacion();
+      };
+
+      recognition.onend = () => {
+        console.log('onend disparado, grabando:', grabando, 'recognition existe:', !!recognition);
+        if (grabando && recognition) {
+          clearTimeout(restartTimeout);
+          restartTimeout = setTimeout(() => {
+            if (grabando && recognition && recognition.state === 'inactive') {
+              try {
+                recognition.start();
+              } catch (e) {
+                console.log('Reinicio automático falló:', e.message);
+              }
+            }
+          }, 300);
+        }
+      };
+
+      recognition.onaudiostart = () => console.log('onaudiostart: Audio capturando');
+      recognition.onsoundstart = () => console.log('onsoundstart: Sonido detectado');
+      recognition.onspeechstart = () => console.log('onspeechstart: Voz detectada');
+
+      try {
+        recognition.start();
+        console.log('recognition.start() ejecutado exitosamente');
+        grabando = true;
+        btnMicro.classList.add('grabando');
+        btnMicro.textContent = '⏹️';
+        listeningIndicator.classList.add('visible');
+      } catch (err) {
+        console.error('Error en recognition.start():', err.name, err.message);
+        audioInfo.textContent = '❌ Error: ' + err.message + ' (código: ' + err.name + ')';
+        recognition = null;
+      }
+    }
+
+    // --- FALLBACK: MediaRecorder (para navegadores sin Web Speech API) ---
+    function iniciarGrabacionFallback() {
+      const constraints = { audio: true };
+      if (selectedMicId) {
+        constraints.audio = { deviceId: { exact: selectedMicId } };
+      }
+      navigator.mediaDevices.getUserMedia(constraints).then(stream => {
+        let mimeType = '';
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+          mimeType = 'audio/webm';
+        } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+          mimeType = 'audio/ogg;codecs=opus';
+        }
+
+        mediaRecorder = mimeType
+          ? new MediaRecorder(stream, { mimeType })
+          : new MediaRecorder(stream);
+
+        audioChunks = [];
+        audioBase64 = null;
+
+        preguntaInput.value = '';
+        preguntaInput.style.height = '40px';
+        audioInfo.textContent = '🔴 Grabando audio...';
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data && e.data.size > 0) {
+            audioChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          stream.getTracks().forEach(track => track.stop());
+
+          if (audioChunks.length === 0) {
+            audioInfo.textContent = '❌ No se capturó audio. Intente de nuevo.';
+            btnMicro.classList.remove('grabando');
+            btnMicro.textContent = '🎤';
+            return;
+          }
+
+          const blob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
+          audioInfo.textContent = `⏳ Procesando audio (${(blob.size / 1024).toFixed(1)}KB)...`;
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            audioBase64 = reader.result.split(',')[1];
+            audioInfo.textContent = '✅ Audio listo, enviando...';
+            enviarMensaje();
+          };
+          reader.onerror = () => {
+            audioInfo.textContent = '❌ Error al leer el audio grabado';
+          };
+          reader.readAsDataURL(blob);
+        };
+
+        mediaRecorder.onerror = () => {
+          audioInfo.textContent = '❌ Error en la grabación';
+          stream.getTracks().forEach(track => track.stop());
+          grabando = false;
+          btnMicro.classList.remove('grabando');
+          btnMicro.textContent = '🎤';
+        };
+
+        mediaRecorder.start(250);
+        grabando = true;
+        btnMicro.classList.add('grabando');
+        btnMicro.textContent = '⏹️';
+      }).catch(err => {
+        audioInfo.textContent = '❌ Error: ' + err.message;
+      });
+    }
+
+    // --- DETENER GRABACIÓN ---
+    function detenerGrabacion() {
+      grabando = false;
+
+      if (restartTimeout) {
+        clearTimeout(restartTimeout);
+        restartTimeout = null;
+      }
+
+      if (recognition) {
+        try { recognition.stop(); } catch (e) {}
+        recognition = null;
+      }
+
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder = null;
+      }
+
+      btnMicro.classList.remove('grabando');
+      btnMicro.textContent = '🎤';
+      listeningIndicator.classList.remove('visible');
+
+      if (useSpeechAPI) {
+        if (preguntaInput.value.trim()) {
+          audioInfo.textContent = '✅ Transcripción lista. Edite si es necesario y presione Enviar.';
+        } else {
+          audioInfo.textContent = '';
+        }
+      }
+    }
+
+    // ============================================
+    //  ENVIAR MENSAJE AL SERVIDOR
+    // ============================================
+
+    async function enviarMensaje() {
+      const pregunta = preguntaInput.value.trim();
+      const btn = document.getElementById('btnEnviar');
+      const loading = document.getElementById('loading');
+      const respuestaDiv = document.getElementById('respuesta');
+      const audioPlayer = document.getElementById('audioPlayer');
+      const cardRespuesta = document.getElementById('cardRespuesta');
+
+      // Si se usó SpeechRecognition, el texto ya está en el textarea
+      // Si se usó fallback (MediaRecorder), audioBase64 está definido
+      if (!pregunta && !audioBase64) {
+        alert('Escribe un mensaje o dicta usando el micrófono');
+        return;
+      }
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      cardRespuesta.style.display = 'none';
+
+      try {
+        const body = audioBase64
+          ? { audio: audioBase64, respondWithVoice: true }
+          : { text: pregunta, respondWithVoice: true };
+
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 90000);
+        const response = await fetch('/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        clearTimeout(timeout);
+
+        const data = await response.json();
+
+        cardRespuesta.style.display = 'block';
+        respuestaDiv.textContent = data.answer || data.error;
+
+        if (data.transcribedQuestion) {
+          preguntaInput.value = data.transcribedQuestion;
+          preguntaInput.style.height = 'auto';
+          preguntaInput.style.height = Math.min(preguntaInput.scrollHeight, 100) + 'px';
+        }
+
+        console.log('Audio disponible:', !!data.audio, data.audio ? data.audio.substring(0, 50) + '...' : 'vacio');
+
+        const audioContainer = document.getElementById('audioContainer');
+        const audioStatus = document.getElementById('audioStatus');
+
+        audioContainer.style.display = 'block';
+
+        if (data.audio && data.audio.length > 0) {
+          audioPlayer.src = 'data:audio/mp3;base64,' + data.audio;
+          audioPlayer.style.display = 'block';
+          audioStatus.textContent = '';
+          // Usar altavoz seleccionado si está disponible
+          try {
+            if (selectedSpeakerId && audioPlayer.setSinkId) {
+              await audioPlayer.setSinkId(selectedSpeakerId);
+            }
+          } catch (e) {
+            console.log('No se pudo cambiar altavoz:', e.message);
+          }
+          audioPlayer.play().catch(e => console.log('Error al reproducir:', e));
+        } else {
+          audioPlayer.style.display = 'none';
+          audioStatus.textContent = '⚠️ Audio no disponible';
+        }
+
+        if (!audioBase64 && !data.transcribedQuestion) {
+          preguntaInput.value = '';
+          preguntaInput.style.height = '40px';
+        }
+        audioBase64 = null;
+        audioInfo.textContent = '';
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          respuestaDiv.textContent = '⏱️ La consulta tardó demasiado. Intente con una pregunta más corta.';
+        } else {
+          respuestaDiv.textContent = 'Error: ' + error.message;
+        }
+        cardRespuesta.style.display = 'block';
+      }
+
+      btn.disabled = false;
+      loading.style.display = 'none';
+    }
+
+    // ============================================
+    //  CONFIGURACIÓN DE DISPOSITIVOS
+    // ============================================
+
+    function toggleSettings() {
+      const modal = document.getElementById('settingsModal');
+      if (modal.style.display === 'none' || !modal.style.display) {
+        openSettings();
+      } else {
+        closeSettings();
+      }
+    }
+
+    async function openSettings() {
+      document.getElementById('settingsModal').style.display = 'flex';
+      await loadDevices();
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    // Cerrar modal al hacer clic fuera del contenido
+    document.getElementById('settingsModal').addEventListener('click', function (e) {
+      if (e.target === this) closeSettings();
+    });
+
+    async function loadDevices() {
+      try {
+        // Solicitar permiso de micrófono para que labels no vengan vacíos
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+
+        const audioInputs = devices.filter(d => d.kind === 'audioinput');
+        const audioOutputs = devices.filter(d => d.kind === 'audiooutput');
+
+        const micSelect = document.getElementById('micSelect');
+        const speakerSelect = document.getElementById('speakerSelect');
+
+        micSelect.innerHTML = audioInputs.map((d, i) =>
+          `<option value="${d.deviceId}">${d.label || 'Micrófono ' + (i + 1)}</option>`
+        ).join('');
+
+        speakerSelect.innerHTML = audioOutputs.map((d, i) =>
+          `<option value="${d.deviceId}">${d.label || 'Altavoz ' + (i + 1)}</option>`
+        ).join('');
+
+        // Restaurar selección previa
+        if (selectedMicId) {
+          const found = [...micSelect.options].some(o => o.value === selectedMicId);
+          if (found) micSelect.value = selectedMicId;
+        }
+        if (selectedSpeakerId) {
+          const found = [...speakerSelect.options].some(o => o.value === selectedSpeakerId);
+          if (found) speakerSelect.value = selectedSpeakerId;
+        }
+
+        console.log('Dispositivos cargados:', audioInputs.length, 'micrófonos,', audioOutputs.length, 'altavoces');
+      } catch (err) {
+        console.error('Error al cargar dispositivos:', err.message);
+        document.getElementById('micSelect').innerHTML = '<option value="">No se pudieron cargar los dispositivos</option>';
+        document.getElementById('speakerSelect').innerHTML = '<option value="">No se pudieron cargar los dispositivos</option>';
+      }
+    }
+
+    function onMicChanged() {
+      selectedMicId = document.getElementById('micSelect').value;
+      console.log('Micrófono seleccionado:', selectedMicId);
+    }
+
+    function onSpeakerChanged() {
+      selectedSpeakerId = document.getElementById('speakerSelect').value;
+      console.log('Altavoz seleccionado:', selectedSpeakerId);
+    }
+
+    // Escuchar cambios de dispositivos (conectar/desconectar)
+    navigator.mediaDevices.addEventListener('devicechange', () => {
+      console.log('Dispositivos cambiados');
+      if (document.getElementById('settingsModal').style.display === 'flex') {
+        loadDevices();
+      }
+    });
+
+    console.log('Web Speech API disponible:', !!(window.SpeechRecognition || window.webkitSpeechRecognition));
+  </script>
+</body>
+
+</html>
